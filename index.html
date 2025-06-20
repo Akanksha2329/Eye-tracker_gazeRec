@@ -39,8 +39,8 @@
   const coordsRef = ref(db, 'coordinates');
   const newRef = push(coordsRef);
   set(newRef, {
-    x: GazeData.x,
-    y: GazeData.y,
+    x: GazeData.docX,
+    y: GazeData.docY,
     timestamp: GazeData.timestamp
   })
   .then(() => {
