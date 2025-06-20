@@ -14,4 +14,40 @@
   <button onclick="stopTracking()">Stop Tracking</button>
   <div id="dot"></div>
 </body>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
+  import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA--bdpz1e3lGQ8sWdrmdMAsWxuhe_9iKA",
+    authDomain: "eye-tracker-a10d0.firebaseapp.com",
+    projectId: "eye-tracker-a10d0",
+    storageBucket: "eye-tracker-a10d0.appspot.com",
+    messagingSenderId: "814026166869",
+    appId: "1:814026166869:web:1cfe9a84686322e7233adc",
+    measurementId: "G-FXWYNLN7YV",
+    databaseURL: "https://eye-tracker-a10d0-default-rtdb.firebaseio.com"
+  };
+
+  // ✅ Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const db = getDatabase(app);
+
+  // ✅ Test write to database
+  const coordsRef = ref(db, 'coordinates');
+  const newRef = push(coordsRef);
+  set(newRef, {
+    x: GazeData.x,
+    y: GazeData.y,
+    timestamp: GazeData.timestamp
+  })
+  .then(() => {
+    console.log('Data saved successfully.');
+  })
+  .catch((error) => {
+    console.error('Error saving data:', error);
+  });
+</script>
 </html>
