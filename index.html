@@ -3,51 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GazeCloud Eye Tracking</title>
+  <title>Eye Tracking</title>
+
+  <!-- External libraries -->
   <script src="https://api.gazerecorder.com/GazeCloudAPI.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/heatmap.js/2.0.0/heatmap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <script src="script.js" defer></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Eye Tracking</h1>
-  <button onclick="startTracking()">Start Tracking</button>
-  <button onclick="stopTracking()">Stop Tracking</button>
-  <div id="dot"></div>
+  <div id="ui-elements">
+    <h1 id="main-title">Eye Tracking</h1>
+    <button id="start-btn" onclick="startTracking()">Start Tracking</button>
+    <button id="stop-btn" onclick="stopTracking()" style="display: none;">Stop Tracking</button>
+    <button id="clear-btn" onclick="clearHeatmap()" style="display: none;">Clear Heatmap</button>
+  </div>
+  <div id="heatmap-container"></div>
 </body>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
-  import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyA--bdpz1e3lGQ8sWdrmdMAsWxuhe_9iKA",
-    authDomain: "eye-tracker-a10d0.firebaseapp.com",
-    projectId: "eye-tracker-a10d0",
-    storageBucket: "eye-tracker-a10d0.appspot.com",
-    messagingSenderId: "814026166869",
-    appId: "1:814026166869:web:1cfe9a84686322e7233adc",
-    measurementId: "G-FXWYNLN7YV",
-    databaseURL: "https://eye-tracker-a10d0-default-rtdb.firebaseio.com"
-  };
-
-  // ✅ Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  const db = getDatabase(app);
-
-  // ✅ Test write to database
-  const coordsRef = ref(db, 'coordinates');
-  const newRef = push(coordsRef);
-  set(newRef, {
-    x: GazeData.docX,
-    y: GazeData.docY,
-    timestamp: GazeData.timestamp
-  })
-  .then(() => {
-    console.log('Data saved successfully.');
-  })
-  .catch((error) => {
-    console.error('Error saving data:', error);
-  });
-</script>
 </html>
