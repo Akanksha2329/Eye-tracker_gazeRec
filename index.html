@@ -19,7 +19,10 @@
     <button id="start-btn" onclick="startTracking()">Start Tracking</button>
     <button id="stop-btn" onclick="stopTracking()" style="display: none;">Stop Tracking</button>
     <button id="clear-btn" onclick="clearHeatmap()" style="display: none;">Clear Heatmap</button>
+    <button id="analyzeBtn" onclick="runAnalysis()">Analyze</button>
   </div>
   <div id="heatmap-container"></div>
+  <div id="fixationCanvasContainer" style="width: 800px; height: 500px; position: relative; border: 1px solid #ccc;"></div>
+  <canvas id="saccadeHistogram" width="600" height="300"></canvas>
 </body>
 </html>
