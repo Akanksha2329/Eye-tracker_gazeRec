@@ -89,15 +89,38 @@ function downloadAnalysis() {
     imageLink.href = graphCanvas.toDataURL();
     imageLink.click();
 
-    // Save data
-    const data = {
-      fixations: analysisResults.fixations,
-      saccades: analysisResults.saccades
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const dataLink = document.createElement("a");
-    dataLink.download = `gaze_analysis_${Date.now()}.json`;
-    dataLink.href = URL.createObjectURL(blob);
-    dataLink.click();
+    // Prepare Excel data
+    const fixationSheet = analysisResults.fixations.map((f, index) => ({
+      Index: index + 1,
+      X: f.x,
+      Y: f.y,
+      Duration_ms: f.duration
+    }));
+
+    const saccadeSheet = analysisResults.saccades.map((s, index) => ({
+      Index: index + 1,
+      From_X: s.from.x,
+      From_Y: s.from.y,
+      To_X: s.to.x,
+      To_Y: s.to.y,
+      Distance: s.distance,
+      Velocity: s.velocity
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const wsFix = XLSX.utils.json_to_sheet(fixationSheet);
+    const wsSac = XLSX.utils.json_to_sheet(saccadeSheet);
+
+    XLSX.utils.book_append_sheet(wb, wsFix, "Fixations");
+    XLSX.utils.book_append_sheet(wb, wsSac, "Saccades");
+
+    // Create and download the Excel file
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([wbout], { type: "application/octet-stream" });
+
+    const excelLink = document.createElement("a");
+    excelLink.download = `gaze_analysis_${Date.now()}.xlsx`;
+    excelLink.href = URL.createObjectURL(blob);
+    excelLink.click();
   });
 }
