@@ -31,12 +31,14 @@ function initHeatmap() {
 GazeCloudAPI.OnCalibrationComplete = () => {
   console.log("Calibration complete");
   if (!heatmapInstance) initHeatmap();
-  // Show Stop and Clear
+
+  // ✅ Show only the necessary buttons
   document.getElementById("stop-btn").style.display = "inline-block";
-  document.getElementById("clear-btn").style.display = "inline-block";
-  document.getElementById("analyzeBtn").style.display = "inline-block";
+  document.getElementById("analyzeClearBtn").style.display = "inline-block";
+
   trackingActive = true;
 };
+
 
 GazeCloudAPI.OnResult = (GazeData) => {
   if (GazeData.state === 0 && heatmapInstance && trackingActive) {
