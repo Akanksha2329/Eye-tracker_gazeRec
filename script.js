@@ -114,7 +114,8 @@ function clearHeatmap() {
   const ui = document.getElementById('ui-elements');
   ui.style.display = 'none';
 
-  html2canvas(document.getElementById('screenshot-wrapper')).then(canvas => {
+  const heatmapVisual = document.getElementById('heatmap-visual');
+  html2canvas(heatmapVisual).then(canvas => {
     ui.style.display = 'block';
     const link = document.createElement('a');
     link.download = `heatmap_screenshot_${Date.now()}.png`;

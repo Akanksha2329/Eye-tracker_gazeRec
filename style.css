@@ -59,7 +59,7 @@ h1 {
 }
 
 /* Background image (fullscreen) */
-#bg-image {
+#bg-image, #bg-image-fixation {
   position: absolute;
   top: 0;
   left: 0;
@@ -70,15 +70,11 @@ h1 {
 }
 
 
-/* Fullscreen heatmap */
 #heatmap-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  pointer-events: none;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
 }
 /* Graph canvas */
 #saccade-graph {
@@ -105,21 +101,21 @@ h1 {
   }
 }
 
-#screenshot-wrapper {
+#heatmap-visual, #fixation-visual {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
   z-index: 0;
+  pointer-events: none;
 }
 
 #fixation-sequence-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 10;
-  pointer-events: none;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
   display: none;
 }
 

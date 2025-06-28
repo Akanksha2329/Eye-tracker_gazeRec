@@ -46,18 +46,30 @@ function analyzeGazeData() {
   }
 
   plotSaccadeGraph();
+
+  // Show the fixation image and canvas
+  document.getElementById("bg-image-fixation").src = document.getElementById("bg-image").src;
+  document.getElementById("bg-image-fixation").style.display = "block";
+  document.getElementById("fixation-sequence-canvas").style.display = "block";
+
   drawFixationSequence();
   downloadAnalysis();
 }
+
 function drawFixationSequence() {
+  const bg = document.getElementById("bg-image");
+  const bgFixation = document.getElementById("bg-image-fixation");
+  bgFixation.src = bg.src;
+  bgFixation.style.display = "block";
+
   const canvas = document.getElementById("fixation-sequence-canvas");
   const ctx = canvas.getContext("2d");
 
-  const bg = document.getElementById("bg-image");
+  // ✅ Proper canvas resolution
   canvas.width = bg.naturalWidth;
   canvas.height = bg.naturalHeight;
 
-  // Resize canvas style to match displayed image dimensions
+  // ✅ Resize canvas visually to match display size
   canvas.style.width = bg.clientWidth + "px";
   canvas.style.height = bg.clientHeight + "px";
 
@@ -66,12 +78,12 @@ function drawFixationSequence() {
 
   // Dynamic sizes based on screen
   const screenFactor = Math.min(canvas.width, canvas.height) / 1000;
-  const circleRadius = 15 * screenFactor; 
-  const arrowLength = 10 * screenFactor;  
+  const circleRadius = 15 * screenFactor;
+  const arrowLength = 10 * screenFactor;
   const fontSize = 14 * screenFactor;
 
   ctx.lineWidth = 2;
-  ctx.font = "14px sans-serif";
+  ctx.font = `${fontSize}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
@@ -80,35 +92,41 @@ function drawFixationSequence() {
   for (let i = 0; i < fixations.length; i++) {
     const f = fixations[i];
 
-    // Draw circle
+  // Calculate scaling factors
+  const scaleX = canvas.width / bg.clientWidth;
+  const scaleY = canvas.height / bg.clientHeight;
+
+  // Scale fixation coordinates
+  const fx = f.x * scaleX;
+  const fy = f.y * scaleY;
+  const next = fixations[i + 1];
+  const nx = next?.x * scaleX;
+  const ny = next?.y * scaleY;
+
+  ctx.beginPath();
+  ctx.arc(fx, fy, circleRadius, 0, 2 * Math.PI);
+  ctx.fillStyle = "yellow";
+  ctx.fill();
+  ctx.stroke();
+ 
+  ctx.fillStyle = "black";
+  ctx.fillText(i + 1, fx, fy);
+
+  if (i < fixations.length - 1) {
     ctx.beginPath();
-    ctx.arc(f.x, f.y, 15, 0, 2 * Math.PI);
-    ctx.fillStyle = "yellow";
-    ctx.fill();
+    ctx.moveTo(fx, fy);
+    ctx.lineTo(nx, ny);
     ctx.stroke();
 
-    // Number label
-    ctx.fillStyle = "black";
-    ctx.fillText(i + 1, f.x, f.y);
-
-    // Draw arrow to next fixation
-    if (i < fixations.length - 1) {
-      const next = fixations[i + 1];
-      ctx.beginPath();
-      ctx.moveTo(f.x, f.y);
-      ctx.lineTo(next.x, next.y);
-      ctx.stroke();
-
-      const angle = Math.atan2(next.y - f.y, next.x - f.x);
-      const len = 10;
-      ctx.beginPath();
-      ctx.moveTo(next.x, next.y);
-      ctx.lineTo(next.x - len * Math.cos(angle - 0.3), next.y - len * Math.sin(angle - 0.3));
-      ctx.lineTo(next.x - len * Math.cos(angle + 0.3), next.y - len * Math.sin(angle + 0.3));
-      ctx.closePath();
-      ctx.fill();
-    }
+    const angle = Math.atan2(ny - fy, nx - fx);
+    ctx.beginPath();
+    ctx.moveTo(nx, ny);
+    ctx.lineTo(nx - arrowLength * Math.cos(angle - 0.3), ny - arrowLength * Math.sin(angle - 0.3));
+    ctx.lineTo(nx - arrowLength * Math.cos(angle + 0.3), ny - arrowLength * Math.sin(angle + 0.3));
+    ctx.closePath();
+    ctx.fill();
   }
+ }
 }
 
 // Plot distance and velocity as a graph
@@ -166,12 +184,15 @@ function downloadAnalysis() {
     graphLink.click();
   });
 
-  // Download fixation sequence image
-  html2canvas(fixationCanvas).then(fSnap => {
-    const fixLink = document.createElement("a");
-    fixLink.download = `fixation_sequence_${Date.now()}.png`;
-    fixLink.href = fSnap.toDataURL();
-    fixLink.click();
+  // Download fixation sequence image (with background image)
+  const fixationWrapper = document.getElementById("fixation-visual");
+  html2canvas(fixationWrapper).then(fSnap => {
+  const fixLink = document.createElement("a");
+  fixLink.download = `fixation_sequence_${Date.now()}.png`;
+  fixLink.href = fSnap.toDataURL();
+  fixLink.click();
+  document.getElementById("fixation-sequence-canvas").style.display = "none";
+  document.getElementById("bg-image-fixation").style.display = "none";
   });
 
   // Prepare Excel data
@@ -228,7 +249,8 @@ function analyzeAndReset() {
 
     
     // Take heatmap screenshot
-    html2canvas(document.getElementById("screenshot-wrapper")).then(heatmapCanvas => {
+    const heatmapVisual = document.getElementById('heatmap-visual');
+    html2canvas(heatmapVisual).then(heatmapCanvas => {
       if (calCanvas) calCanvas.style.visibility = "visible";
       if (webcamVideo) webcamVideo.style.visibility = "visible";
 
@@ -305,6 +327,12 @@ function analyzeGazeOnly(callback) {
   }
 
   plotSaccadeGraph();
+
+  // Show the fixation image and canvas
+  document.getElementById("bg-image-fixation").src = document.getElementById("bg-image").src;
+  document.getElementById("bg-image-fixation").style.display = "block";
+  document.getElementById("fixation-sequence-canvas").style.display = "block";
+
   drawFixationSequence();
   downloadAnalysis(); // saves Excel + saccade graph
 

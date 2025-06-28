@@ -29,10 +29,14 @@
   <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload()" />
 
   <canvas id="saccade-graph" style="display:none; margin-top: 20px;"></canvas>
-  <canvas id="fixation-sequence-canvas" style="display: none; border:1px solid #ccc;"></canvas>
-  <div id="screenshot-wrapper">
+  
+  <div id="heatmap-visual">
   <img id="bg-image" alt="Uploaded background" />
   <div id="heatmap-container"></div>
+  </div>
+  <div id="fixation-visual">
+  <img id="bg-image-fixation" alt="Uploaded background" />
+  <canvas id="fixation-sequence-canvas" style="display: none; border:1px solid #ccc;"></canvas>
   </div>
 
 </body>
