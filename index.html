@@ -20,12 +20,20 @@
   <div id="ui-elements">
     <h1 id="main-title">Eye Tracking</h1>
     <button id="start-btn" onclick="startTracking()">Start Tracking</button>
+    <button id="upload-btn" onclick="triggerUpload()" style="display: none;">Upload Pic</button>
     <button id="stop-btn" onclick="stopTracking()" style="display: none;">Stop Tracking</button>
     <button id="analyzeClearBtn" onclick="analyzeAndReset()" style="display: none;">Analyze & Reset</button>
   </div>
+
+   <!-- Hidden image upload input -->
+  <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload()" />
+
+  <!-- Fullscreen background image -->
+  <img id="bg-image" alt="Uploaded background" />
+
   <div id="heatmap-container"></div>
-  <canvas id="saccade-graph" width="600" height="300" style="display:none; margin-top: 20px;"></canvas>
+  <canvas id="saccade-graph" style="display:none; margin-top: 20px;"></canvas>
+  <canvas id="fixation-sequence-canvas" style="display: none; border:1px solid #ccc;"></canvas>
 
 </body>
 </html>
-

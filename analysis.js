@@ -46,7 +46,65 @@ function analyzeGazeData() {
   }
 
   plotSaccadeGraph();
+  drawFixationSequence();
   downloadAnalysis();
+}
+function drawFixationSequence() {
+  const canvas = document.getElementById("fixation-sequence-canvas");
+  const ctx = canvas.getContext("2d");
+
+  // Set canvas to full screen size
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  canvas.style.display = "block";
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Dynamic sizes based on screen
+  const screenFactor = Math.min(canvas.width, canvas.height) / 1000;
+  const circleRadius = 15 * screenFactor; 
+  const arrowLength = 10 * screenFactor;  
+  const fontSize = 14 * screenFactor;
+
+  ctx.lineWidth = 2;
+  ctx.font = "14px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const fixations = analysisResults.fixations;
+
+  for (let i = 0; i < fixations.length; i++) {
+    const f = fixations[i];
+
+    // Draw circle
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, 15, 0, 2 * Math.PI);
+    ctx.fillStyle = "yellow";
+    ctx.fill();
+    ctx.stroke();
+
+    // Number label
+    ctx.fillStyle = "black";
+    ctx.fillText(i + 1, f.x, f.y);
+
+    // Draw arrow to next fixation
+    if (i < fixations.length - 1) {
+      const next = fixations[i + 1];
+      ctx.beginPath();
+      ctx.moveTo(f.x, f.y);
+      ctx.lineTo(next.x, next.y);
+      ctx.stroke();
+
+      const angle = Math.atan2(next.y - f.y, next.x - f.x);
+      const len = 10;
+      ctx.beginPath();
+      ctx.moveTo(next.x, next.y);
+      ctx.lineTo(next.x - len * Math.cos(angle - 0.3), next.y - len * Math.sin(angle - 0.3));
+      ctx.lineTo(next.x - len * Math.cos(angle + 0.3), next.y - len * Math.sin(angle + 0.3));
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
 }
 
 // Plot distance and velocity as a graph
@@ -54,10 +112,19 @@ function plotSaccadeGraph() {
   const canvas = document.getElementById("saccade-graph");
   const ctx = canvas.getContext("2d");
 
+  canvas.width = window.innerWidth;
+  canvas.height = 300;
+
+  const screenFactor = canvas.width / 1000;
+  const barWidth = 6 * screenFactor;
+  const spacing = 10 * screenFactor;
+
   canvas.style.display = "block";
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font = "14px sans-serif";
+  ctx.font = `${14 * screenFactor}px sans-serif`;
   ctx.fillText("Saccadic Distance (blue) & Velocity (red)", 10, 20);
+
+
 
   const distances = analysisResults.saccades.map(s => s.distance);
   const velocities = analysisResults.saccades.map(s => s.velocity);
@@ -66,63 +133,71 @@ function plotSaccadeGraph() {
   const maxV = Math.max(...velocities);
 
   for (let i = 0; i < distances.length; i++) {
-    const x = 30 + i * 10;
+    const x = 30 + i * spacing;
     const distH = (distances[i] / maxD) * 100;
     const velH = (velocities[i] / maxV) * 100;
 
     ctx.fillStyle = "blue";
-    ctx.fillRect(x, 280 - distH, 4, distH);
+    ctx.fillRect(x, 280 - distH, barWidth, distH);
 
     ctx.fillStyle = "red";
-    ctx.fillRect(x + 4, 280 - velH, 4, velH);
+    ctx.fillRect(x + barWidth, 280 - velH, barWidth, velH);
   }
 }
 
 
 // Download graph and data
-function downloadAnalysisFiles() {
-  const canvas = document.getElementById("saccade-graph");
-  html2canvas(canvas).then(graphCanvas => {
-    // Save image
-    const imageLink = document.createElement("a");
-    imageLink.download = `saccade_graph_${Date.now()}.png`;
-    imageLink.href = graphCanvas.toDataURL();
-    imageLink.click();
+function downloadAnalysis() {
+  const graphCanvas = document.getElementById("saccade-graph");
+  const fixationCanvas = document.getElementById("fixation-sequence-canvas");
 
-    // Prepare Excel data
-    const fixationSheet = analysisResults.fixations.map((f, index) => ({
-      Index: index + 1,
-      X: f.x,
-      Y: f.y,
-      Duration_ms: f.duration
-    }));
-
-    const saccadeSheet = analysisResults.saccades.map((s, index) => ({
-      Index: index + 1,
-      From_X: s.from.x,
-      From_Y: s.from.y,
-      To_X: s.to.x,
-      To_Y: s.to.y,
-      Distance: s.distance,
-      Velocity: s.velocity
-    }));
-
-    const wb = XLSX.utils.book_new();
-    const wsFix = XLSX.utils.json_to_sheet(fixationSheet);
-    const wsSac = XLSX.utils.json_to_sheet(saccadeSheet);
-
-    XLSX.utils.book_append_sheet(wb, wsFix, "Fixations");
-    XLSX.utils.book_append_sheet(wb, wsSac, "Saccades");
-
-    // Create and download the Excel file
-    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([wbout], { type: "application/octet-stream" });
-
-    const excelLink = document.createElement("a");
-    excelLink.download = `gaze_analysis_${Date.now()}.xlsx`;
-    excelLink.href = URL.createObjectURL(blob);
-    excelLink.click();
+  // Download graph image
+  html2canvas(graphCanvas).then(gSnap => {
+    const graphLink = document.createElement("a");
+    graphLink.download = `saccade_graph_${Date.now()}.png`;
+    graphLink.href = gSnap.toDataURL();
+    graphLink.click();
   });
+
+  // Download fixation sequence image
+  html2canvas(fixationCanvas).then(fSnap => {
+    const fixLink = document.createElement("a");
+    fixLink.download = `fixation_sequence_${Date.now()}.png`;
+    fixLink.href = fSnap.toDataURL();
+    fixLink.click();
+  });
+
+  // Prepare Excel data
+  const fixationSheet = analysisResults.fixations.map((f, index) => ({
+    Index: index + 1,
+    X: f.x,
+    Y: f.y,
+    Duration_ms: f.duration
+  }));
+
+  const saccadeSheet = analysisResults.saccades.map((s, index) => ({
+    Index: index + 1,
+    From_X: s.from.x,
+    From_Y: s.from.y,
+    To_X: s.to.x,
+    To_Y: s.to.y,
+    Distance: s.distance,
+    Velocity: s.velocity
+  }));
+
+  const wb = XLSX.utils.book_new();
+  const wsFix = XLSX.utils.json_to_sheet(fixationSheet);
+  const wsSac = XLSX.utils.json_to_sheet(saccadeSheet);
+  XLSX.utils.book_append_sheet(wb, wsFix, "Fixations");
+  XLSX.utils.book_append_sheet(wb, wsSac, "Saccades");
+
+  const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([wbout], { type: "application/octet-stream" });
+
+  const excelLink = document.createElement("a");
+  excelLink.download = `gaze_analysis_${Date.now()}.xlsx`;
+  excelLink.href = URL.createObjectURL(blob);
+  excelLink.click();
 }
 
 //
@@ -139,8 +214,15 @@ function analyzeAndReset() {
     const ui = document.getElementById('ui-elements');
     ui.style.display = 'none';
 
+    const calCanvas = document.getElementById("CalCanvasId");
+    const webcamVideo = document.getElementById("showvideoid");
+    if (calCanvas) calCanvas.style.display = "none";
+    if (webcamVideo) webcamVideo.style.display = "none";
+    
     // Take heatmap screenshot
-    html2canvas(container).then(heatmapCanvas => {
+    html2canvas(document.body).then(heatmapCanvas => {
+      if (calCanvas) calCanvas.style.display = "block";
+      if (webcamVideo) webcamVideo.style.display = "block";
       ui.style.display = 'block';
 
       // Download heatmap image
@@ -161,8 +243,19 @@ function analyzeAndReset() {
       document.getElementById("main-title").style.display = "block";
       document.getElementById("analyzeClearBtn").style.display = "none";
       document.getElementById("stop-btn").style.display = "none";
+      document.getElementById("upload-btn").style.display = "none";
 
-      alert("✅ Analysis complete!\nAll files have been downloaded, and the app has been reset.");
+     // ✅ Reset background image
+      const bgImage = document.getElementById("bg-image");
+      bgImage.src = "";
+      bgImage.removeAttribute("src");
+      bgImage.style.display = "none";
+      imageUploaded = false;
+
+      setTimeout(() => {
+         alert("✅ Analysis complete!\nAll files have been downloaded, and the app has been reset.");
+      }, 100);
+
 
       console.log("Everything done. UI reset.");
     });
@@ -200,7 +293,8 @@ function analyzeGazeOnly(callback) {
   }
 
   plotSaccadeGraph();
-  downloadAnalysisFiles(); // saves Excel + saccade graph
+  drawFixationSequence();
+  downloadAnalysis(); // saves Excel + saccade graph
 
   if (callback) callback(); // calls the heatmap part after this
 }

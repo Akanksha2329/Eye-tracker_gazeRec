@@ -1,6 +1,7 @@
 let heatmapInstance;
 let gazePoints = [];
 let trackingActive = false;
+let imageUploaded = false;  // New flag to track image upload
 
 // Initialize heatmap
 
@@ -33,15 +34,17 @@ GazeCloudAPI.OnCalibrationComplete = () => {
   if (!heatmapInstance) initHeatmap();
 
   // ✅ Show only the necessary buttons
-  document.getElementById("stop-btn").style.display = "inline-block";
-  document.getElementById("analyzeClearBtn").style.display = "inline-block";
-
-  trackingActive = true;
+   document.getElementById("start-btn").style.display = "none";
+  document.getElementById("main-title").style.display = "none";
+  document.getElementById("upload-btn").style.display = "inline-block";
+  
+  trackingActive = false;
+  imageUploaded = false;
 };
 
 
 GazeCloudAPI.OnResult = (GazeData) => {
-  if (GazeData.state === 0 && heatmapInstance && trackingActive) {
+  if (GazeData.state === 0 && heatmapInstance && trackingActive && imageUploaded) {
     gazePoints.push({
       x: Math.round(GazeData.docX),
       y: Math.round(GazeData.docY),
@@ -62,14 +65,41 @@ GazeCloudAPI.OnError = (error) => alert("GazeCloud error: " + error);
 
 // Start/Stop/Clear functions
 function startTracking() {
-  console.log("Start Tracking clicked");
-
-  // Immediately hide title and Start button
-  document.getElementById("main-title").style.display = "none";
   document.getElementById("start-btn").style.display = "none";
-
-  if (!heatmapInstance) initHeatmap();
+  document.getElementById("main-title").style.display = "none";
   GazeCloudAPI.StartEyeTracking();
+  trackingActive = true;
+}
+
+// Trigger image upload input
+function triggerUpload() {
+  document.getElementById("imageUpload").click();
+}
+
+// Handle uploaded image
+function handleImageUpload() {
+  const input = document.getElementById("imageUpload");
+  const img = document.getElementById("bg-image");
+
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      img.src = e.target.result;
+      img.style.display = "block"; // Show image fullscreen
+
+      // Set flag to true after image is loaded
+      imageUploaded = true;
+
+      // Start gaze tracking now that image is loaded
+      startTracking();
+
+      // Show tracking buttons
+      document.getElementById("stop-btn").style.display = "inline-block";
+      document.getElementById("analyzeClearBtn").style.display = "inline-block";
+      document.getElementById("upload-btn").style.display = "none";
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
 }
 
 function stopTracking() {
@@ -83,7 +113,7 @@ function clearHeatmap() {
   const ui = document.getElementById('ui-elements');
   ui.style.display = 'none';
 
-  html2canvas(container).then(canvas => {
+  html2canvas(document.body).then(canvas => {
     ui.style.display = 'block';
     const link = document.createElement('a');
     link.download = `heatmap_screenshot_${Date.now()}.png`;
@@ -99,9 +129,12 @@ function clearHeatmap() {
     if (!trackingActive) {
       document.getElementById("start-btn").style.display = "inline-block";
       document.getElementById("stop-btn").style.display = "none";
-      document.getElementById("clear-btn").style.display = "none";
-      document.getElementById("analyzeBtn").style.display = "none";
+      document.getElementById("analyzeClearBtn").style.display = "none";
+      document.getElementById("upload-btn").style.display = "none";
       document.getElementById("main-title").style.display = "block";
+      document.getElementById("bg-image").style.display = "none";
+      imageUploaded = false;
+
     }
 
     console.log("Heatmap cleared and screenshot saved.");
