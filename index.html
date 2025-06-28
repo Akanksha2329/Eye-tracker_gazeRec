@@ -28,12 +28,12 @@
    <!-- Hidden image upload input -->
   <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload()" />
 
-  <!-- Fullscreen background image -->
-  <img id="bg-image" alt="Uploaded background" />
-
-  <div id="heatmap-container"></div>
   <canvas id="saccade-graph" style="display:none; margin-top: 20px;"></canvas>
   <canvas id="fixation-sequence-canvas" style="display: none; border:1px solid #ccc;"></canvas>
+  <div id="screenshot-wrapper">
+  <img id="bg-image" alt="Uploaded background" />
+  <div id="heatmap-container"></div>
+  </div>
 
 </body>
 </html>

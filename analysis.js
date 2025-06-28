@@ -53,9 +53,13 @@ function drawFixationSequence() {
   const canvas = document.getElementById("fixation-sequence-canvas");
   const ctx = canvas.getContext("2d");
 
-  // Set canvas to full screen size
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const bg = document.getElementById("bg-image");
+  canvas.width = bg.naturalWidth;
+  canvas.height = bg.naturalHeight;
+
+  // Resize canvas style to match displayed image dimensions
+  canvas.style.width = bg.clientWidth + "px";
+  canvas.style.height = bg.clientHeight + "px";
 
   canvas.style.display = "block";
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -112,8 +116,11 @@ function plotSaccadeGraph() {
   const canvas = document.getElementById("saccade-graph");
   const ctx = canvas.getContext("2d");
 
-  canvas.width = window.innerWidth;
-  canvas.height = 300;
+  const bg = document.getElementById("bg-image");
+  canvas.width = bg.clientWidth;
+  canvas.height = bg.clientHeight;
+
+
 
   const screenFactor = canvas.width / 1000;
   const barWidth = 6 * screenFactor;
@@ -216,13 +223,15 @@ function analyzeAndReset() {
 
     const calCanvas = document.getElementById("CalCanvasId");
     const webcamVideo = document.getElementById("showvideoid");
-    if (calCanvas) calCanvas.style.display = "none";
-    if (webcamVideo) webcamVideo.style.display = "none";
+    if (calCanvas) calCanvas.style.visibility = "hidden";
+    if (webcamVideo) webcamVideo.style.visibility = "hidden";
+
     
     // Take heatmap screenshot
-    html2canvas(document.body).then(heatmapCanvas => {
-      if (calCanvas) calCanvas.style.display = "block";
-      if (webcamVideo) webcamVideo.style.display = "block";
+    html2canvas(document.getElementById("screenshot-wrapper")).then(heatmapCanvas => {
+      if (calCanvas) calCanvas.style.visibility = "visible";
+      if (webcamVideo) webcamVideo.style.visibility = "visible";
+
       ui.style.display = 'block';
 
       // Download heatmap image
@@ -230,6 +239,9 @@ function analyzeAndReset() {
       link.download = `heatmap_screenshot_${Date.now()}.png`;
       link.href = heatmapCanvas.toDataURL();
       link.click();
+
+      document.getElementById("saccade-graph").style.display = "none";
+      document.getElementById("fixation-sequence-canvas").style.display = "none";
 
       // Reset everything
       if (heatmapInstance) {
