@@ -9,18 +9,11 @@ function getDistance(p1, p2) {
   return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
 }
 
-// Analyze gaze data for fixations and saccades
-function analyzeGazeData() {
-  if (gazePoints.length < 2) {
-    alert("Not enough gaze data to analyze.");
-    return;
-  }
-
+function processGazeData() {
   const fixationThreshold = 50;
   const fixationDuration = 200;
   const frameTime = 33;
   let currentFix = [gazePoints[0]];
-
   analysisResults = { fixations: [], saccades: [] };
 
   for (let i = 1; i < gazePoints.length; i++) {
@@ -44,6 +37,16 @@ function analyzeGazeData() {
       currentFix = [gazePoints[i]];
     }
   }
+}
+
+// Analyze gaze data for fixations and saccades
+function analyzeGazeData() {
+  if (gazePoints.length < 2) {
+    alert("Not enough gaze data to analyze.");
+    return;
+  }
+
+  processGazeData();
 
   plotSaccadeGraph();
 
@@ -90,12 +93,11 @@ function drawFixationSequence() {
 
   const fixations = analysisResults.fixations;
 
-  for (let i = 0; i < fixations.length; i++) {
-    const f = fixations[i];
-
-  // Calculate scaling factors
   const scaleX = canvas.width / bg.clientWidth;
   const scaleY = canvas.height / bg.clientHeight;
+
+  for (let i = 0; i < fixations.length; i++) {
+    const f = fixations[i];
 
   // Scale fixation coordinates
   const fx = f.x * scaleX;
@@ -132,58 +134,136 @@ function drawFixationSequence() {
 
 // Plot distance and velocity as a graph
 function plotSaccadeGraph() {
-  const canvas = document.getElementById("saccade-graph");
-  const ctx = canvas.getContext("2d");
+  const container = document.getElementById("saccade-d3-container");
+  container.style.display = "block";
+  container.innerHTML = ""; // Clear old graph
 
-  const bg = document.getElementById("bg-image");
-  canvas.width = bg.clientWidth;
-  canvas.height = bg.clientHeight;
-
-
-
-  const screenFactor = canvas.width / 1000;
-  const barWidth = 6 * screenFactor;
-  const spacing = 10 * screenFactor;
-
-  canvas.style.display = "block";
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font = `${14 * screenFactor}px sans-serif`;
-  ctx.fillText("Saccadic Distance (blue) & Velocity (red)", 10, 20);
+  const data = analysisResults.saccades;
+    if (!data || data.length === 0) {
+      console.warn("No saccade data to display.");
+      return;
+    }
+  const width = container.clientWidth || 800;
+  const height = 300;
+  const margin = { top: 30, right: 30, bottom: 40, left: 50 };
 
 
+  const svg = d3.select(container)
+    .append("svg")
+    .attr("id", "saccade-svg")
+    .attr("width", width)
+    .attr("height", height);
 
-  const distances = analysisResults.saccades.map(s => s.distance);
-  const velocities = analysisResults.saccades.map(s => s.velocity);
+  const x = d3.scaleBand()
+    .domain(data.map((d, i) => i))
+    .range([margin.left, width - margin.right])
+    .padding(0.3);
 
-  const maxD = Math.max(...distances);
-  const maxV = Math.max(...velocities);
+  const minBarWidth = 10;
+  const bandwidth = Math.max(x.bandwidth(), minBarWidth);  
 
-  for (let i = 0; i < distances.length; i++) {
-    const x = 30 + i * spacing;
-    const distH = (distances[i] / maxD) * 100;
-    const velH = (velocities[i] / maxV) * 100;
+  const maxY = Math.max(
+    1, // Avoid zero scaling
+    d3.max(data, d => d.distance || 0),
+    d3.max(data, d => d.velocity || 0)
+  );
 
-    ctx.fillStyle = "blue";
-    ctx.fillRect(x, 280 - distH, barWidth, distH);
+  const y = d3.scaleLinear()
+    .domain([0, maxY])
+    .range([height - margin.bottom, margin.top]);
 
-    ctx.fillStyle = "red";
-    ctx.fillRect(x + barWidth, 280 - velH, barWidth, velH);
-  }
+  const tooltip = d3.select("body")
+    .append("div")
+    .attr("class", "tooltip");  
+
+  // Axes
+  svg.append("g")
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).tickFormat(i => `S${i + 1}`))
+    .selectAll("text")
+    .attr("transform", "rotate(-45)")
+    .style("text-anchor", "end");
+
+
+  svg.append("g")
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y));
+
+  // Bars - Distance (blue)
+  svg.selectAll(".bar-distance")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("x", (d, i) => x(i))
+    .attr("y", d => y(d.distance))
+    .attr("width", bandwidth / 2)
+    .attr("height", d => y(0) - y(d.distance))
+    .attr("fill", "steelblue")
+    .on("mouseover", function(event, d) {
+      tooltip.style("opacity", 1)
+         .html(`
+           <strong>Saccade ${data.indexOf(d) + 1}</strong><br/>
+           From: (${Math.round(d.from.x)}, ${Math.round(d.from.y)})<br/>
+           To: (${Math.round(d.to.x)}, ${Math.round(d.to.y)})<br/>
+           Distance: ${d.distance.toFixed(2)} px<br/>
+           Velocity: ${d.velocity.toFixed(2)} px/s
+         `);
+    })
+    .on("mousemove", function(event) {
+      tooltip
+         .style("left", (event.pageX + 15) + "px")
+         .style("top", (event.pageY - 30) + "px");
+    })
+    .on("mouseout", function() {
+      tooltip.style("opacity", 0);
+    });
+
+  // Bars - Velocity (red)
+  svg.selectAll(".bar-velocity")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("x", (d, i) => x(i) + x.bandwidth() / 2)
+    .attr("y", d => y(d.velocity))
+    .attr("width", bandwidth / 2)
+    .attr("height", d => y(0) - y(d.velocity))
+    .attr("fill", "tomato")
+    .on("mouseover", function(event, d) {
+      tooltip.style("opacity", 1)
+         .html(`
+           <strong>Saccade ${data.indexOf(d) + 1}</strong><br/>
+           From: (${Math.round(d.from.x)}, ${Math.round(d.from.y)})<br/>
+           To: (${Math.round(d.to.x)}, ${Math.round(d.to.y)})<br/>
+           Distance: ${d.distance.toFixed(2)} px<br/>
+           Velocity: ${d.velocity.toFixed(2)} px/s
+         `);
+    })
+    .on("mousemove", function(event) {
+      tooltip
+         .style("left", (event.pageX + 15) + "px")
+         .style("top", (event.pageY - 30) + "px");
+    })
+    .on("mouseout", function() {
+      tooltip.style("opacity", 0);
+    });
+
+  // Legend
+  svg.append("text")
+    .attr("x", width - 160)
+    .attr("y", margin.top - 10)
+    .attr("fill", "steelblue")
+    .text("■ Distance (px)");
+
+  svg.append("text")
+    .attr("x", width - 160)
+    .attr("y", margin.top + 10)
+    .attr("fill", "tomato")
+    .text("■ Velocity (px/s)");
 }
-
 
 // Download graph and data
 function downloadAnalysis() {
-  const graphCanvas = document.getElementById("saccade-graph");
   const fixationCanvas = document.getElementById("fixation-sequence-canvas");
-
-  // Download graph image
-  html2canvas(graphCanvas).then(gSnap => {
-    const graphLink = document.createElement("a");
-    graphLink.download = `saccade_graph_${Date.now()}.png`;
-    graphLink.href = gSnap.toDataURL();
-    graphLink.click();
-  });
 
   // Download fixation sequence image (with background image)
   const fixationWrapper = document.getElementById("fixation-visual");
@@ -227,6 +307,43 @@ function downloadAnalysis() {
   excelLink.download = `gaze_analysis_${Date.now()}.xlsx`;
   excelLink.href = URL.createObjectURL(blob);
   excelLink.click();
+
+  // Download D3 SVG as image
+  const svg = document.getElementById("saccade-svg");
+  if (svg) {
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svg);
+
+    const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    const downloadLink = document.createElement("a");
+    downloadLink.href = svgUrl;
+    downloadLink.download = `saccade_graph_${Date.now()}.svg`;
+    downloadLink.click();
+  }
+  /* // Optional: Export SVG to PNG
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const img = new Image();
+  const svgData = new XMLSerializer().serializeToString(svg);
+  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  img.onload = function () {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(svgUrl);
+
+    const pngLink = document.createElement("a");
+    pngLink.href = canvas.toDataURL("image/png");
+    pngLink.download = `saccade_graph_${Date.now()}.png`;
+    pngLink.click();
+  };
+
+  img.src = svgUrl;
+*/
 }
 
 //
@@ -263,9 +380,6 @@ function analyzeAndReset() {
       link.href = heatmapCanvas.toDataURL();
       link.click();
 
-      document.getElementById("saccade-graph").style.display = "none";
-      document.getElementById("fixation-sequence-canvas").style.display = "none";
-
       // Reset everything
       if (heatmapInstance) {
         gazePoints = [];
@@ -287,6 +401,12 @@ function analyzeAndReset() {
       bgImage.style.display = "none";
       imageUploaded = false;
 
+      const sacContainer = document.getElementById("saccade-d3-container");
+      if (sacContainer) {
+        sacContainer.innerHTML = "";
+        sacContainer.style.display = "none";
+      }
+
       setTimeout(() => {
          alert("✅ Analysis complete!\nAll files have been downloaded, and the app has been reset.");
       }, 100);
@@ -298,34 +418,7 @@ function analyzeAndReset() {
 }
 
 function analyzeGazeOnly(callback) {
-  const fixationThreshold = 50;
-  const fixationDuration = 200;
-  const frameTime = 33;
-  let currentFix = [gazePoints[0]];
-
-  analysisResults = { fixations: [], saccades: [] };
-
-  for (let i = 1; i < gazePoints.length; i++) {
-    const dist = getDistance(gazePoints[i], gazePoints[i - 1]);
-
-    if (dist < fixationThreshold) {
-      currentFix.push(gazePoints[i]);
-    } else {
-      if (currentFix.length * frameTime >= fixationDuration) {
-        const avgX = currentFix.reduce((sum, p) => sum + p.x, 0) / currentFix.length;
-        const avgY = currentFix.reduce((sum, p) => sum + p.y, 0) / currentFix.length;
-        analysisResults.fixations.push({ x: avgX, y: avgY, duration: currentFix.length * frameTime });
-      }
-      const timeDiff = frameTime * (i - 1);
-      analysisResults.saccades.push({
-        from: gazePoints[i - 1],
-        to: gazePoints[i],
-        distance: dist,
-        velocity: dist / (timeDiff / 1000)
-      });
-      currentFix = [gazePoints[i]];
-    }
-  }
+  processGazeData();
 
   plotSaccadeGraph();
 

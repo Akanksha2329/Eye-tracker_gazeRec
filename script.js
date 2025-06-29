@@ -45,6 +45,12 @@ GazeCloudAPI.OnCalibrationComplete = () => {
 
 GazeCloudAPI.OnResult = (GazeData) => {
   if (GazeData.state === 0 && heatmapInstance && trackingActive && imageUploaded) {
+    const img = document.getElementById("bg-image");
+    const rect = img.getBoundingClientRect();
+
+    const adjustedX = GazeData.docX - rect.left;
+    const adjustedY = GazeData.docY - rect.top;
+
     gazePoints.push({
       x: Math.round(GazeData.docX),
       y: Math.round(GazeData.docY),
@@ -87,7 +93,7 @@ function handleImageUpload() {
       img.onload = () => {
         imageUploaded = true;
 
-    startTracking(); 
+        startTracking()
 
     // Show tracking buttons
     document.getElementById("stop-btn").style.display = "inline-block";
@@ -135,8 +141,9 @@ function clearHeatmap() {
       document.getElementById("upload-btn").style.display = "none";
       document.getElementById("main-title").style.display = "block";
       document.getElementById("bg-image").style.display = "none";
+      document.getElementById("bg-image").src = "";
+      document.getElementById("bg-image").style.display = "none";
       imageUploaded = false;
-
     }
 
     console.log("Heatmap cleared and screenshot saved.");
