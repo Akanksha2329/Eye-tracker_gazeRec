@@ -66,8 +66,9 @@ function drawFixationSequence() {
   const ctx = canvas.getContext("2d");
 
   // ✅ Proper canvas resolution
-  canvas.width = bg.naturalWidth;
-  canvas.height = bg.naturalHeight;
+  canvas.width = bg.clientWidth;
+  canvas.height = bg.clientHeight;
+
 
   // ✅ Resize canvas visually to match display size
   canvas.style.width = bg.clientWidth + "px";
@@ -92,16 +93,13 @@ function drawFixationSequence() {
   for (let i = 0; i < fixations.length; i++) {
     const f = fixations[i];
 
-  // Calculate scaling factors
-  const scaleX = canvas.width / bg.clientWidth;
-  const scaleY = canvas.height / bg.clientHeight;
+  // Fixed 
+  const fx = f.x;
+  const fy = f.y;
 
-  // Scale fixation coordinates
-  const fx = f.x * scaleX;
-  const fy = f.y * scaleY;
   const next = fixations[i + 1];
-  const nx = next?.x * scaleX;
-  const ny = next?.y * scaleY;
+  const nx = next?.x;
+  const ny = next?.y;
 
   ctx.beginPath();
   ctx.arc(fx, fy, circleRadius, 0, 2 * Math.PI);
