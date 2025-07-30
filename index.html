@@ -33,10 +33,12 @@
 <body>
   <div id="ui-elements">
     <h1 id="main-title">Eye Tracking</h1>
-    <button id="start-btn" onclick="startTracking()">Start Tracking</button>
+    <button id="start-calibration-btn" onclick="startCalibration()">Start Calibration</button>
     <button id="upload-btn" onclick="triggerUpload()" style="display: none;">Upload Photo</button>
     <button id="stop-btn" onclick="stopTracking()" style="display: none;">Stop Tracking</button>
     <button id="analyzeClearBtn" onclick="analyzeAndReset()" style="display: none;">Analyze & Reset</button>
+    <button id="aoi-select-btn" onclick="enableAOISelection()" style="display: none;">Select AOI</button>
+    <button id="start-tracking-btn" onclick="startTracking()" style="display: none;">Start Tracking</button>
   </div>
 
   <canvas id="CalCanvasId" style="display: none;"></canvas>
@@ -44,11 +46,12 @@
 
    <!-- Hidden image upload input -->
   <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload()" />
-
+  
   <div id="saccade-d3-container" style="display:none; margin-top: 20px;"></div>
   
   <div id="heatmap-visual">
   <img id="bg-image" alt="Uploaded background" />
+  <canvas id="aoi-canvas" style="position:absolute; top:0; left:0; pointer-events:none; z-index:2;"></canvas>
   <div id="heatmap-container"></div>
   </div>
   <div id="fixation-visual">

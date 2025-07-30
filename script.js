@@ -34,7 +34,7 @@ GazeCloudAPI.OnCalibrationComplete = () => {
   if (!heatmapInstance) initHeatmap();
 
   // ✅ Show only the necessary buttons
-  document.getElementById("start-btn").style.display = "none";
+  document.getElementById("start-calibration-btn").style.display = "none";
   document.getElementById("main-title").style.display = "none";
   document.getElementById("upload-btn").style.display = "inline-block";
   
@@ -71,10 +71,27 @@ GazeCloudAPI.OnError = (error) => alert("GazeCloud error: " + error);
 
 // Start/Stop/Clear functions
 function startTracking() {
-  document.getElementById("start-btn").style.display = "none";
-  document.getElementById("main-title").style.display = "none";
+  if (!AOI || AOI.width === 0 || AOI.height === 0) {
+    alert("Please select an AOI before starting tracking.");
+    return;
+  }
+  document.getElementById("start-tracking-btn").style.display = "none";
+  document.getElementById("stop-btn").style.display = "inline-block";
+  document.getElementById("analyzeClearBtn").style.display = "inline-block";
   GazeCloudAPI.StartEyeTracking();
   trackingActive = true;
+}
+
+function startCalibration() {
+  // Hide title and button immediately
+  document.getElementById("start-calibration-btn").style.display = "none";
+  document.getElementById("main-title").style.display = "none";
+
+  GazeCloudAPI.StartEyeTracking();
+  // When calibration is done, show upload button
+  GazeCloudAPI.OnCalibrationComplete = () => {
+    document.getElementById("upload-btn").style.display = "inline-block";
+  };
 }
 
 // Trigger image upload input
@@ -92,13 +109,8 @@ function handleImageUpload() {
     reader.onload = function (e) {
       img.onload = () => {
         imageUploaded = true;
-
-        startTracking()
-
-    // Show tracking buttons
-    document.getElementById("stop-btn").style.display = "inline-block";
-    document.getElementById("analyzeClearBtn").style.display = "inline-block";
-    document.getElementById("upload-btn").style.display = "none";
+        document.getElementById("aoi-select-btn").style.display = "inline-block";
+        document.getElementById("upload-btn").style.display = "none";
   };
 
   img.src = e.target.result;     // set the image
@@ -135,7 +147,7 @@ function clearHeatmap() {
 
     // After stop + clear: show Start again, hide others
     if (!trackingActive) {
-      document.getElementById("start-btn").style.display = "inline-block";
+      document.getElementById("start-calibration-btn").style.display = "inline-block";
       document.getElementById("stop-btn").style.display = "none";
       document.getElementById("analyzeClearBtn").style.display = "none";
       document.getElementById("upload-btn").style.display = "none";
