@@ -663,7 +663,6 @@ function enableAOISelection() {
     alert("Upload an image first!");
     return;
   }
-  // Match canvas size to image
   canvas.width = img.width;
   canvas.height = img.height;
   canvas.style.display = "block";
@@ -674,6 +673,7 @@ function enableAOISelection() {
   aoiSelecting = true;
   aoiStart = null;
 
+  // Mouse events
   canvas.onmousedown = function(e) {
     if (!aoiSelecting) return;
     const rect = canvas.getBoundingClientRect();
@@ -691,20 +691,52 @@ function enableAOISelection() {
     const rect = canvas.getBoundingClientRect();
     const x2 = e.clientX - rect.left;
     const y2 = e.clientY - rect.top;
-    AOI = {
-      x: Math.min(aoiStart.x, x2),
-      y: Math.min(aoiStart.y, y2),
-      width: Math.abs(x2 - aoiStart.x),
-      height: Math.abs(y2 - aoiStart.y)
-    };
-    drawAOIRect(AOI.x, AOI.y, AOI.width, AOI.height);
-    aoiSelecting = false;
-    canvas.style.pointerEvents = "none";
-    canvas.style.display = "none";
-    alert(`AOI selected: x=${AOI.x}, y=${AOI.y}, w=${AOI.width}, h=${AOI.height}`);
-    document.getElementById("start-tracking-btn").style.display = "inline-block";
-    document.getElementById("aoi-select-btn").style.display = "none";
+    finishAOISelection(x2, y2, canvas);
   };
+
+  // Touch events
+  canvas.ontouchstart = function(e) {
+    if (!aoiSelecting) return;
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    aoiStart = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+    e.preventDefault();
+  };
+  canvas.ontouchmove = function(e) {
+    if (!aoiSelecting || !aoiStart) return;
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x2 = touch.clientX - rect.left;
+    const y2 = touch.clientY - rect.top;
+    drawAOIRect(aoiStart.x, aoiStart.y, x2 - aoiStart.x, y2 - aoiStart.y);
+    e.preventDefault();
+  };
+  canvas.ontouchend = function(e) {
+    if (!aoiSelecting || !aoiStart) return;
+    const rect = canvas.getBoundingClientRect();
+    // Use last known touch position
+    const touch = e.changedTouches[0];
+    const x2 = touch.clientX - rect.left;
+    const y2 = touch.clientY - rect.top;
+    finishAOISelection(x2, y2, canvas);
+    e.preventDefault();
+  };
+}
+
+function finishAOISelection(x2, y2, canvas) {
+  AOI = {
+    x: Math.min(aoiStart.x, x2),
+    y: Math.min(aoiStart.y, y2),
+    width: Math.abs(x2 - aoiStart.x),
+    height: Math.abs(y2 - aoiStart.y)
+  };
+  drawAOIRect(AOI.x, AOI.y, AOI.width, AOI.height);
+  aoiSelecting = false;
+  canvas.style.pointerEvents = "none";
+  canvas.style.display = "none";
+  alert(`AOI selected: x=${AOI.x}, y=${AOI.y}, w=${AOI.width}, h=${AOI.height}`);
+  document.getElementById("start-tracking-btn").style.display = "inline-block";
+  document.getElementById("aoi-select-btn").style.display = "none";
 }
 
 function drawAOIRect(x, y, w, h) {
